@@ -125,6 +125,7 @@
   runoffPath.slice(1,22).forEach(([x,z])=>slideRoute.push({x,z,y:heightAt(x,z)+.1}));
 
   let sliding=false,slideIndex=0,slideProgress=0,slideEscapeCooldown=0;
+  window.isSlidingWaterfall=()=>sliding;
 
   function nearestSlideIndex(){
     let best=-1,bestD=Infinity;
