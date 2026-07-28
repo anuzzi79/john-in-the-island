@@ -50,7 +50,10 @@
 
   function attachToBird(bird){
     if(!bird||ridingBird||grabCooldown>0)return false;
+    if(typeof spendFishForNoronha==='function'&&!spendFishForNoronha())return false;
     ridingBird=bird;
+    bird.noronhaRideTarget=new THREE.Vector3(-115,heightAt(-115,40)+8,40);
+    bird.noronhaRideT=0;
     bird.riderControlled=true;
     bird.originalScale=bird.originalScale||bird.g.scale.clone();
     if(!bird.isRiggedHawk)bird.g.scale.copy(bird.originalScale).multiplyScalar(1.65);
@@ -134,6 +137,26 @@
     if(grabSequenceT<1.65){
       updateGrabSequence(dt,t,bird);
     }else{
+      if(bird.noronhaRideTarget){
+        bird.noronhaRideT+=dt;
+        const toTarget=bird.noronhaRideTarget.clone().sub(bird.g.position);
+        const d=Math.hypot(toTarget.x,toTarget.z);
+        if(d<3.5||bird.noronhaRideT>18){
+          bird.g.position.copy(bird.noronhaRideTarget);
+          releaseBird();
+          john.position.set(-115,heightAt(-115,40),40);
+          document.getElementById('status').textContent='Noronha raggiunta: isola premio sbloccata!';
+          return true;
+        }
+        const dir=new THREE.Vector3(toTarget.x,0,toTarget.z).normalize();
+        const speed=13.5;
+        bird.g.position.x+=dir.x*speed*dt;
+        bird.g.position.z+=dir.z*speed*dt;
+        const desiredY=Math.max(heightAt(bird.g.position.x,bird.g.position.z)+8,THREE.MathUtils.lerp(bird.g.position.y,bird.noronhaRideTarget.y,.025));
+        bird.g.position.y=THREE.MathUtils.lerp(bird.g.position.y,desiredY,.08);
+        if(typeof orientHawkAlongVelocity==='function'&&bird.isRiggedHawk)orientHawkAlongVelocity(bird,dir.x*speed,0,dir.z*speed,0,.2);
+        bird.flapBoost=.45;
+      }else{
       const forward=-inputY;
       const side=-inputX;
       const fx=Math.sin(yawValue),fz=Math.cos(yawValue);
@@ -162,6 +185,7 @@
         bird.g.rotation.z=THREE.MathUtils.lerp(bird.g.rotation.z,-side*.28,.12);
       }
       bird.flapBoost=horizontalInput>.01?.25:0;
+      }
     }
 
     if(!bird.isRiggedHawk){
