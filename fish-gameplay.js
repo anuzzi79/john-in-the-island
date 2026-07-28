@@ -15,6 +15,7 @@
   });
 
   function seaFloorAt(x,z){
+    if(typeof globalSeaFloorAt==='function')return globalSeaFloorAt(x,z)-.22;
     const r=Math.hypot(x,z);
     const open=Math.max(0,r-58);
     const islandSlope=-1.65-open*.2-Math.max(0,r-86)*.18;
@@ -32,7 +33,9 @@
     const sp=seabedPatch.geometry.attributes.position;
     for(let i=0;i<sp.count;i++){
       const wx=john.position.x+sp.getX(i),wz=john.position.z+sp.getZ(i);
-      sp.setY(i,seaFloorAt(wx,wz)+Math.sin(wx*.23+t*.55)*.12+Math.cos(wz*.19-t*.4)*.1);
+      const edge=Math.max(Math.abs(sp.getX(i)),Math.abs(sp.getZ(i)))/41;
+      const blend=THREE.MathUtils.smoothstep(edge,.72,1);
+      sp.setY(i,seaFloorAt(wx,wz)+(1-blend)*(Math.sin(wx*.23+t*.55)*.05+Math.cos(wz*.19-t*.4)*.04));
     }
     sp.needsUpdate=true;
     seabedPatch.geometry.computeVertexNormals();
@@ -119,7 +122,7 @@
     scene.add(waterVeil);
     const seabedGeo=new THREE.PlaneGeometry(82,82,44,44);
     seabedGeo.rotateX(-Math.PI/2);
-    const seabedMat=new THREE.MeshStandardMaterial({color:0x2f6f63,roughness:1,metalness:0,flatShading:true,vertexColors:false});
+    const seabedMat=new THREE.MeshStandardMaterial({color:0x2f6f63,roughness:1,metalness:0,flatShading:true,vertexColors:false,transparent:true,opacity:.72,depthWrite:false});
     seabedPatch=new THREE.Mesh(seabedGeo,seabedMat);
     seabedPatch.receiveShadow=true;
     seabedPatch.visible=false;
@@ -188,6 +191,22 @@
     }
   }
 
+
+  function updateBirdUnderwaterVisibility(active){
+    if(typeof animals==='undefined')return;
+    for(const animal of animals){
+      if(!animal||animal.kind!=='bird'||!animal.g)continue;
+      if(active){
+        if(animal.__underwaterWasVisible===undefined)animal.__underwaterWasVisible=animal.g.visible;
+        animal.g.visible=false;
+        if(animal.visual)animal.visual.visible=false;
+      }else if(animal.__underwaterWasVisible!==undefined){
+        animal.g.visible=animal.disabled?false:animal.__underwaterWasVisible;
+        if(animal.visual)animal.visual.visible=animal.g.visible;
+        delete animal.__underwaterWasVisible;
+      }
+    }
+  }
   function updateWaterEffects(dt,t,johnSwimming,yawValue=0,pitchValue=.35){
     initWaterEffects();
     const active=!!johnSwimming;
@@ -197,6 +216,7 @@
     updateSeabedObjects(t,active);
     waterRings.forEach(r=>r.visible=active);
     setJohnUnderwaterLook(active,t);
+    updateBirdUnderwaterVisibility(active);
     renderer.domElement.style.filter=active?'saturate(1.13) contrast(.96) blur(.45px)':waterCanvasFilter;
     if(!active)return;
     const waterY=-.72+.04*Math.sin(t*2.2+john.position.x*.08);
