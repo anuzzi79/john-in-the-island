@@ -3,7 +3,7 @@
   let fishCount=0;
   let lastJohnX=0,lastJohnZ=0,swimYaw=0,swimPitch=0,swimDepthY=-.35,wasSwimming=false,keyDive=false,keyRise=false;
   const fish=[];
-  let waterFxReady=false,waterSurfacePatch=null,waterVeil=null,waterRings=[],seabedPatch=null,johnMaterialState=[],waterCanvasFilter=null;
+  let waterFxReady=false,waterSurfacePatch=null,waterVeil=null,waterRings=[],seabedPatch=null,seabedObjects=[],johnMaterialState=[],waterCanvasFilter=null;
   const waterTint=new THREE.Color(0x9eeaff);
   addEventListener('keydown',e=>{
     if(e.code==='ShiftLeft'||e.code==='ShiftRight'||e.code==='ControlLeft'||e.code==='ControlRight')keyDive=true;
@@ -38,6 +38,37 @@
     seabedPatch.geometry.computeVertexNormals();
   }
 
+
+  function updateSeabedObjects(t,active){
+    for(const g of seabedObjects){
+      g.visible=active;
+      if(!active)continue;
+      const ox=g.userData.ox,oz=g.userData.oz;
+      const wx=john.position.x+ox,wz=john.position.z+oz;
+      g.position.set(wx,seaFloorAt(wx,wz)+.05,wz);
+      g.rotation.y=g.userData.spin+Math.sin(t*.35+ox)*.08;
+      const s=.8+.2*Math.sin((wx+wz)*.07);
+      g.scale.setScalar(s);
+    }
+  }
+
+  function updateUnderwaterCamera(dt,t,active,yawValue=0,pitchValue=.35){
+    const waterY=-.72+.04*Math.sin(t*2.2+john.position.x*.08);
+    if(!active)return;
+    const camUnder=john.position.y<waterY-2.1;
+    const dist=camUnder?6.4:7.6;
+    const desiredY=camUnder?Math.min(waterY-.28,john.position.y+2.25):john.position.y+4.6;
+    const camPos=new THREE.Vector3(john.position.x-Math.sin(yawValue)*dist,desiredY,john.position.z-Math.cos(yawValue)*dist);
+    camera.position.lerp(camPos,.18);
+    camera.lookAt(john.position.x,john.position.y+1.1,john.position.z);
+    if(waterSurfacePatch){
+      waterSurfacePatch.material.opacity=camUnder?.48:.34;
+      waterSurfacePatch.renderOrder=camUnder?45:18;
+    }
+    if(waterVeil){
+      waterVeil.material.opacity=camUnder?.18+.04*Math.sin(t*5.1):.11+.035*Math.sin(t*4.8);
+    }
+  }
   function updateUnderwaterMovement(dt,t,johnSwimming,inputX=0,inputY=0,yawValue=0,pitchValue=.35){
     if(!johnSwimming){
       wasSwimming=false;
@@ -66,7 +97,7 @@
   function initWaterEffects(){
     if(waterFxReady)return;
     waterFxReady=true;
-    const surfaceGeo=new THREE.PlaneGeometry(9.5,9.5,30,30);
+    const surfaceGeo=new THREE.PlaneGeometry(42,42,48,48);
     surfaceGeo.rotateX(-Math.PI/2);
     surfaceGeo.userData.base=Array.from(surfaceGeo.attributes.position.array);
     const surfaceMat=new THREE.MeshStandardMaterial({color:0x7fefff,roughness:.08,metalness:.02,transparent:true,opacity:.34,side:THREE.DoubleSide,depthWrite:false});
@@ -93,6 +124,35 @@
     seabedPatch.receiveShadow=true;
     seabedPatch.visible=false;
     scene.add(seabedPatch);
+    const rockMat=new THREE.MeshStandardMaterial({color:0x4f6158,roughness:1,flatShading:true});
+    const coralMats=[new THREE.MeshStandardMaterial({color:0xd88b77,roughness:.9,flatShading:true}),new THREE.MeshStandardMaterial({color:0x8fbf9f,roughness:.9,flatShading:true}),new THREE.MeshStandardMaterial({color:0xd8c36e,roughness:.9,flatShading:true})];
+    const grassMat=new THREE.MeshStandardMaterial({color:0x2d7b62,roughness:.95,flatShading:true});
+    for(let i=0;i<46;i++){
+      const g=new THREE.Group();
+      const kind=i%5;
+      if(kind<2){
+        const r=new THREE.Mesh(new THREE.DodecahedronGeometry(.35+(i%4)*.12,0),rockMat);
+        r.scale.set(1.2+(i%3)*.35,.55+(i%5)*.12,.85+(i%2)*.25);
+        r.castShadow=true;g.add(r);
+      }else if(kind<4){
+        const stem=new THREE.Mesh(new THREE.CylinderGeometry(.04,.08,.55+(i%3)*.18,5),coralMats[i%coralMats.length]);
+        stem.position.y=.28;stem.castShadow=true;g.add(stem);
+        for(let j=0;j<3;j++){
+          const arm=new THREE.Mesh(new THREE.CylinderGeometry(.025,.04,.34,5),stem.material);
+          arm.position.set((j-1)*.16,.48+j*.05,0);arm.rotation.z=(j-1)*.55;arm.castShadow=true;g.add(arm);
+        }
+      }else{
+        for(let j=0;j<5;j++){
+          const blade=new THREE.Mesh(new THREE.ConeGeometry(.035,.55+(j%3)*.18,4),grassMat);
+          blade.position.set((j-2)*.08,.26,Math.sin(j)*.06);blade.rotation.z=(j-2)*.18;blade.castShadow=true;g.add(blade);
+        }
+      }
+      const a=i*2.399,r=6+((i*7)%34);
+      g.userData={ox:Math.cos(a)*r,oz:Math.sin(a)*r,spin:(i%7)*.21};
+      g.visible=false;
+      scene.add(g);
+      seabedObjects.push(g);
+    }
     waterCanvasFilter=renderer.domElement.style.filter||'';
     john.traverse(o=>{
       if(!o.isMesh||!o.material)return;
@@ -128,12 +188,13 @@
     }
   }
 
-  function updateWaterEffects(dt,t,johnSwimming){
+  function updateWaterEffects(dt,t,johnSwimming,yawValue=0,pitchValue=.35){
     initWaterEffects();
     const active=!!johnSwimming;
     waterSurfacePatch.visible=active;
     waterVeil.visible=active;
     updateSeabedPatch(t,active);
+    updateSeabedObjects(t,active);
     waterRings.forEach(r=>r.visible=active);
     setJohnUnderwaterLook(active,t);
     renderer.domElement.style.filter=active?'saturate(1.13) contrast(.96) blur(.45px)':waterCanvasFilter;
@@ -154,6 +215,7 @@
       ring.scale.set(pulse,pulse,pulse);
       ring.material.opacity=(.22-i*.045)*(1-((pulse-1)/.55));
     }
+    updateUnderwaterCamera(dt,t,active,yawValue,pitchValue);
     const mid=new THREE.Vector3().copy(john.position).lerp(camera.position,.42);
     waterVeil.position.copy(mid);
     waterVeil.lookAt(camera.position);
@@ -194,7 +256,7 @@
 
   function updateFishGameplay(dt,t,johnSwimming,inputX=0,inputY=0,yawValue=0,pitchValue=.35){
     updateUnderwaterMovement(dt,t,johnSwimming,inputX,inputY,yawValue,pitchValue);
-    updateWaterEffects(dt,t,johnSwimming);
+    updateWaterEffects(dt,t,johnSwimming,yawValue,pitchValue);
     const dx=john.position.x-lastJohnX,dz=john.position.z-lastJohnZ;
     if(johnSwimming&&Math.hypot(dx,dz)>.015)swimYaw=Math.atan2(-dx,-dz);
     lastJohnX=john.position.x;lastJohnZ=john.position.z;
