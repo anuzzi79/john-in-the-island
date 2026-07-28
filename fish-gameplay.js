@@ -7,11 +7,11 @@
   const waterTint=new THREE.Color(0x9eeaff);
   addEventListener('keydown',e=>{
     if(e.code==='ShiftLeft'||e.code==='ShiftRight'||e.code==='ControlLeft'||e.code==='ControlRight')keyDive=true;
-    if(e.code==='Space'||e.code==='KeyE')keyRise=true;
+    if(e.code==='KeyE')keyRise=true;
   });
   addEventListener('keyup',e=>{
     if(e.code==='ShiftLeft'||e.code==='ShiftRight'||e.code==='ControlLeft'||e.code==='ControlRight')keyDive=false;
-    if(e.code==='Space'||e.code==='KeyE')keyRise=false;
+    if(e.code==='KeyE')keyRise=false;
   });
 
   function seaFloorAt(x,z){
@@ -257,6 +257,7 @@
     return true;
   }
 
+  window.requestSwimRise=()=>{keyRise=true;setTimeout(()=>{keyRise=false},260);return true;};
   window.updateFishGameplay=updateFishGameplay;
   window.spendFishForNoronha=spendFishForNoronha;
   window.getFishCount=()=>fishCount;
