@@ -1,5 +1,5 @@
 (()=>{
-  const status=document.getElementById('status');
+  const fishStatus=document.getElementById('status');
   let fishCount=0;
   const fish=[];
   const hud=document.createElement('div');
@@ -47,7 +47,7 @@
         f.visible=false;
         fishCount=Math.min(3,fishCount+1);
         updateHud();
-        if(status)status.textContent=fishCount>=3?'Pesci pronti: cerca un falco per Noronha':'Pesce preso!';
+        if(fishStatus)fishStatus.textContent=fishCount>=3?'Pesci pronti: cerca un falco per Noronha':'Pesce preso!';
       }
     }
     if(johnSwimming){
@@ -68,12 +68,12 @@
 
   function spendFishForNoronha(){
     if(fishCount<3){
-      if(status)status.textContent=`Servono 3 pesci per convincere il falco (${fishCount}/3)`;
+      if(fishStatus)fishStatus.textContent=`Servono 3 pesci per convincere il falco (${fishCount}/3)`;
       return false;
     }
     fishCount-=3;
     updateHud();
-    if(status)status.textContent='Falco nutrito: volo premio verso Noronha!';
+    if(fishStatus)fishStatus.textContent='Falco nutrito: volo premio verso Noronha!';
     return true;
   }
 
