@@ -14,10 +14,10 @@
   function makeFish(x,z,index){
     const y=-.7+.12*Math.sin(index);
     const g=new THREE.Group();
-    const mat=new THREE.MeshStandardMaterial({color:index%2?0xffc44f:0x4fd6ff,roughness:.65});
+    const mat=new THREE.MeshStandardMaterial({color:index%2?0xffc44f:0x4fd6ff,roughness:.38,emissive:index%2?0x4a2600:0x00384a,emissiveIntensity:.28});
     const body=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),mat);
-    body.scale.set(1.45,.55,.65);
-    const tail=new THREE.Mesh(new THREE.ConeGeometry(.16,.32,3),mat);
+    body.scale.set(1.75,.62,.72);
+    const tail=new THREE.Mesh(new THREE.ConeGeometry(.19,.38,3),mat);
     tail.rotation.z=Math.PI/2;
     tail.position.x=-.33;
     g.add(body,tail);
@@ -40,7 +40,7 @@
       const u=f.userData;
       f.position.x=u.homeX+Math.sin(t*1.4+u.phase)*1.15;
       f.position.z=u.homeZ+Math.cos(t*1.1+u.phase)*.75;
-      f.position.y=-.7+Math.sin(t*2.2+u.phase)*.08;
+      f.position.y=-.82+Math.sin(t*2.2+u.phase)*.12;
       f.rotation.y=Math.atan2(Math.cos(t*1.4+u.phase),Math.sin(t*1.1+u.phase));
       if(johnSwimming&&Math.hypot(f.position.x-john.position.x,f.position.z-john.position.z)<1.35){
         u.caught=true;
@@ -51,17 +51,35 @@
       }
     }
     if(johnSwimming){
-      john.rotation.x=THREE.MathUtils.lerp(john.rotation.x,-.18,.08);
-      body.position.y=2.12+Math.sin(t*5)*.03;
-      leg1.rotation.x=.35+Math.sin(t*6)*.28;
-      leg2.rotation.x=.35+Math.sin(t*6+Math.PI)*.28;
+      const stroke=t*6.8,strokeL=Math.sin(stroke),strokeR=Math.sin(stroke+Math.PI),kick=Math.sin(t*10.5);
+      john.rotation.x=THREE.MathUtils.lerp(john.rotation.x,-1.27,.14);
+      john.rotation.z=THREE.MathUtils.lerp(john.rotation.z,Math.sin(stroke*.5)*.09,.12);
+      body.position.y=2.18+Math.sin(t*4.4)*.035;
+      body.rotation.x=THREE.MathUtils.lerp(body.rotation.x,.08,.12);
+      body.rotation.y=THREE.MathUtils.lerp(body.rotation.y,0,.12);
+      body.rotation.z=THREE.MathUtils.lerp(body.rotation.z,Math.sin(stroke*.5)*.07,.12);
+      head.position.y=THREE.MathUtils.lerp(head.position.y,3.25,.1);
+      head.rotation.x=THREE.MathUtils.lerp(head.rotation.x,-.28,.12);
+      head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,Math.sin(stroke*.5)*.12,.12);
+      leg1.rotation.x=.16+kick*.25;
+      leg2.rotation.x=.16-kick*.25;
+      leg1.rotation.z=-.08;
+      leg2.rotation.z=.08;
       if(typeof leg1Knee!=='undefined'&&typeof leg2Knee!=='undefined'){
-        leg1Knee.rotation.x=.45;
-        leg2Knee.rotation.x=.45;
+        leg1Knee.rotation.x=.22+Math.max(0,-kick)*.45;
+        leg2Knee.rotation.x=.22+Math.max(0,kick)*.45;
       }
       if(typeof leftArm!=='undefined'&&typeof rightArm!=='undefined'){
-        leftArm.rotation.x=-.8+Math.sin(t*6)*.35;
-        rightArm.rotation.x=-.8+Math.sin(t*6+Math.PI)*.35;
+        leftArm.rotation.x=-1.25+strokeL*.82;
+        rightArm.rotation.x=-1.25+strokeR*.82;
+        leftArm.rotation.y=.2*Math.cos(stroke);
+        rightArm.rotation.y=-.2*Math.cos(stroke);
+        leftArm.rotation.z=-.55+.28*Math.max(0,strokeL);
+        rightArm.rotation.z=.55-.28*Math.max(0,strokeR);
+        if(typeof leftElbow!=='undefined'&&typeof rightElbow!=='undefined'){
+          leftElbow.rotation.x=.42+Math.max(0,-strokeL)*.9;
+          rightElbow.rotation.x=.42+Math.max(0,-strokeR)*.9;
+        }
       }
     }
   }
