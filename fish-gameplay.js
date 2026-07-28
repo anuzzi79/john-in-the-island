@@ -58,6 +58,7 @@
     swimDepthY+=vertical*dt;
     swimDepthY=Math.max(floorY,Math.min(-.32,swimDepthY));
     if(swimDepthY<=floorY+.05&&fishStatus)fishStatus.textContent='John tocca il fondo del mare';
+    else if(vertical>.2&&fishStatus)fishStatus.textContent='John risale verso la superficie';
     john.position.y=swimDepthY+Math.sin(t*3.2)*.035;
     swimPitch=THREE.MathUtils.lerp(swimPitch,Math.max(-.55,Math.min(.55,vertical*.11)),.14);
   }
@@ -257,7 +258,7 @@
     return true;
   }
 
-  window.requestSwimRise=()=>{keyRise=true;setTimeout(()=>{keyRise=false},260);return true;};
+  window.requestSwimRise=()=>{keyRise=true;setTimeout(()=>{keyRise=false},720);return true;};
   window.updateFishGameplay=updateFishGameplay;
   window.spendFishForNoronha=spendFishForNoronha;
   window.getFishCount=()=>fishCount;
