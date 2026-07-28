@@ -156,8 +156,10 @@
     rightArm.rotation.set(0,0,0);
     leftElbow.rotation.x=0;
     rightElbow.rotation.x=0;
-    leg1Knee.rotation.x=0;
-    leg2Knee.rotation.x=0;
+    if(typeof leg1Knee!=='undefined'&&typeof leg2Knee!=='undefined'){
+      leg1Knee.rotation.x=0;
+      leg2Knee.rotation.x=0;
+    }
   }
 
   function escapeWaterSlide(){
@@ -230,8 +232,10 @@
     rightElbow.rotation.x=.6;
     leg1.rotation.x=.75+Math.sin(t*8)*.16;
     leg2.rotation.x=.48+Math.sin(t*8+1.2)*.16;
-    leg1Knee.rotation.x=.9+Math.sin(t*8)*.1;
-    leg2Knee.rotation.x=.75+Math.sin(t*8+1.2)*.1;
+    if(typeof leg1Knee!=='undefined'&&typeof leg2Knee!=='undefined'){
+      leg1Knee.rotation.x=.9+Math.sin(t*8)*.1;
+      leg2Knee.rotation.x=.75+Math.sin(t*8+1.2)*.1;
+    }
 
     if(slideIndex>=slideRoute.length-2&&slideProgress>=.96){
       sliding=false;
