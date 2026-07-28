@@ -66,6 +66,10 @@
     hawk.lastVelocity.set(vx,vy,vz);
   }
 
+  function birdFlightY(x,z,offset=6.2){
+    return Math.max(.65,heightAt(x,z))+offset;
+  }
+
   function randomFlightTarget(currentPosition,minDistance=12){
     for(let attempt=0;attempt<30;attempt++){
       const radius=Math.sqrt(Math.random())*ISLAND_FLIGHT_RADIUS;
@@ -73,9 +77,9 @@
       const x=Math.cos(angle)*radius;
       const z=Math.sin(angle)*radius;
       if(Math.hypot(x-currentPosition.x,z-currentPosition.z)<minDistance)continue;
-      return new THREE.Vector3(x,heightAt(x,z)+7+Math.random()*6,z);
+      return new THREE.Vector3(x,birdFlightY(x,z,7+Math.random()*6),z);
     }
-    return new THREE.Vector3(0,heightAt(0,0)+11,0);
+    return new THREE.Vector3(0,birdFlightY(0,0,11),0);
   }
 
   function signedHorizontalTurn(from,to){
@@ -123,7 +127,7 @@
         flightFrame.rotation.order='YXZ';
         flightFrame.visible=true;
         flightFrame.add(visual);
-        const initialY=heightAt(start.x,start.z)+5.8+index*.7;
+        const initialY=birdFlightY(start.x,start.z,5.8+index*.7);
         flightFrame.position.set(start.x,initialY,start.z);
         scene.add(flightFrame);
         created.push(flightFrame);
@@ -219,7 +223,7 @@
           hawk.velocity.z=THREE.MathUtils.lerp(hawk.velocity.z,steered.z*hawk.cruiseSpeed,1-Math.exp(-1.7*dt));
 
           const altitudeOffset=hawk.minAltitudeOffset??5.2;
-          const minimumY=heightAt(hawk.g.position.x,hawk.g.position.z)+altitudeOffset;
+          const minimumY=birdFlightY(hawk.g.position.x,hawk.g.position.z,altitudeOffset);
           const desiredVy=THREE.MathUtils.clamp((hawk.target.y-hawk.g.position.y)*.48,-2.2,2.2);
           hawk.velocity.y=THREE.MathUtils.lerp(hawk.velocity.y,desiredVy,1-Math.exp(-1.25*dt));
           if(hawk.g.position.y<minimumY)hawk.velocity.y=Math.max(hawk.velocity.y,(minimumY-hawk.g.position.y)*2);

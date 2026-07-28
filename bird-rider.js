@@ -5,6 +5,10 @@
   let grabStartY=0;
   let grabFlightYaw=0;
 
+  function birdRideFlightY(x,z,offset=5.1){
+    return Math.max(.65,heightAt(x,z))+offset;
+  }
+
   function nearestReachableBird(maxDistance=4.5){
     let best=null,bestD=Infinity;
     for(const animal of animals){
@@ -52,7 +56,7 @@
     if(!bird||ridingBird||grabCooldown>0)return false;
     if(typeof spendFishForNoronha==='function'&&!spendFishForNoronha())return false;
     ridingBird=bird;
-    bird.noronhaRideTarget=new THREE.Vector3(-115,heightAt(-115,40)+8,40);
+    bird.noronhaRideTarget=new THREE.Vector3(-115,birdRideFlightY(-115,40,8),40);
     bird.noronhaRideT=0;
     bird.riderControlled=true;
     bird.originalScale=bird.originalScale||bird.g.scale.clone();
@@ -152,7 +156,7 @@
         const speed=13.5;
         bird.g.position.x+=dir.x*speed*dt;
         bird.g.position.z+=dir.z*speed*dt;
-        const desiredY=Math.max(heightAt(bird.g.position.x,bird.g.position.z)+8,THREE.MathUtils.lerp(bird.g.position.y,bird.noronhaRideTarget.y,.025));
+        const desiredY=Math.max(birdRideFlightY(bird.g.position.x,bird.g.position.z,8),THREE.MathUtils.lerp(bird.g.position.y,bird.noronhaRideTarget.y,.025));
         bird.g.position.y=THREE.MathUtils.lerp(bird.g.position.y,desiredY,.08);
         if(typeof orientHawkAlongVelocity==='function'&&bird.isRiggedHawk)orientHawkAlongVelocity(bird,dir.x*speed,0,dir.z*speed,0,.2);
         bird.flapBoost=.45;
@@ -171,7 +175,7 @@
       const ground=heightAt(bird.g.position.x,bird.g.position.z);
       const climb=horizontalInput>.01?Math.max(-1,Math.min(1,-Math.sin(pitchValue)))*6.6:0;
       bird.g.position.y+=climb*dt;
-      bird.g.position.y=Math.max(ground+5.1,Math.min(40,bird.g.position.y));
+      bird.g.position.y=Math.max(birdRideFlightY(bird.g.position.x,bird.g.position.z,5.1),Math.min(40,bird.g.position.y));
 
       const actualVx=(bird.g.position.x-before.x)/Math.max(dt,.001);
       const actualVy=(bird.g.position.y-before.y)/Math.max(dt,.001);

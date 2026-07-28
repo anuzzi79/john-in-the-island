@@ -3,20 +3,28 @@
   const CHECK_EVERY_MS=1200;
   let checks=0;
 
+  function birdFlightY(x,z,offset=6.5){
+    return Math.max(.65,heightAt(x,z))+offset;
+  }
+
+  function johnIsUnderwater(){
+    return typeof isSwimmableWater==='function'&&isSwimmableWater(john.position.x,john.position.z)&&john.position.y<-.45;
+  }
+
   function placeNearJohn(hawk,index){
     if(!hawk||!hawk.g||!hawk.velocity)return;
     const angle=(performance.now()*.00035)+(index*Math.PI);
     const distance=10+index*5;
     const x=john.position.x+Math.cos(angle)*distance;
     const z=john.position.z+Math.sin(angle)*distance;
-    const y=heightAt(x,z)+6.5+index*1.4;
+    const y=birdFlightY(x,z,6.5+index*1.4);
     hawk.g.position.set(x,y,z);
 
     const targetAngle=angle+1.1+(Math.random()-.5)*1.2;
     const targetDistance=14+Math.random()*12;
     const tx=john.position.x+Math.cos(targetAngle)*targetDistance;
     const tz=john.position.z+Math.sin(targetAngle)*targetDistance;
-    hawk.target=new THREE.Vector3(tx,heightAt(tx,tz)+7+Math.random()*4,tz);
+    hawk.target=new THREE.Vector3(tx,birdFlightY(tx,tz,7+Math.random()*4),tz);
     hawk.targetAge=0;
 
     const direction=hawk.target.clone().sub(hawk.g.position).setY(0);
@@ -32,6 +40,7 @@
 
   const timer=setInterval(()=>{
     checks++;
+    if(johnIsUnderwater())return;
     const hawks=(window.johnHawks||[]).filter(h=>h&&h.g&&h.isRiggedHawk);
     if(!hawks.length){
       if(checks>100)clearInterval(timer);
@@ -63,7 +72,7 @@
   const SWOOP_DEFAULT_ALTITUDE_FLOOR=5.2;
 
   function attemptSwoop(){
-    if(typeof john==='undefined')return;
+    if(typeof john==='undefined'||johnIsUnderwater())return;
     const candidates=(window.johnHawks||[]).filter(h=>h&&h.g&&h.isRiggedHawk&&!h.riderControlled&&!h.swooping);
     if(!candidates.length)return;
     const hawk=candidates[Math.floor(Math.random()*candidates.length)];
@@ -71,7 +80,7 @@
     const distance=2+Math.random()*1.5;
     const tx=john.position.x+Math.cos(angle)*distance;
     const tz=john.position.z+Math.sin(angle)*distance;
-    const ty=heightAt(tx,tz)+SWOOP_ALTITUDE_OFFSET;
+    const ty=birdFlightY(tx,tz,SWOOP_ALTITUDE_OFFSET);
     hawk.swooping=true;
     hawk.minAltitudeOffset=SWOOP_LOW_ALTITUDE_FLOOR;
     hawk.target=new THREE.Vector3(tx,ty,tz);
