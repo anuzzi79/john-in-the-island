@@ -110,12 +110,24 @@
     scene.add(s);spray.push(s);
   }
 
-  const armGeo=new THREE.BoxGeometry(.3,1.35,.34);
-  const leftArm=new THREE.Mesh(armGeo,shirt);
-  const rightArm=new THREE.Mesh(armGeo,shirt);
-  leftArm.position.set(-.72,2.25,0);
-  rightArm.position.set(.72,2.25,0);
-  leftArm.castShadow=rightArm.castShadow=true;
+  function johnMakeArm(side){
+    const shoulder=new THREE.Group();
+    shoulder.position.set(side*.72,2.925,0);
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.4,4,8),shirt);
+    upper.position.y=-.35;
+    upper.castShadow=true;
+    shoulder.add(upper);
+    const elbow=new THREE.Group();
+    elbow.position.y=-.7;
+    shoulder.add(elbow);
+    const forearm=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.4,4,8),skin);
+    forearm.position.y=-.32;
+    forearm.castShadow=true;
+    elbow.add(forearm);
+    return {shoulder,elbow};
+  }
+  const johnArmL=johnMakeArm(-1),johnArmR=johnMakeArm(1);
+  const leftArm=johnArmL.shoulder,rightArm=johnArmR.shoulder,leftElbow=johnArmL.elbow,rightElbow=johnArmR.elbow;
   john.add(leftArm,rightArm);
 
   const slideRoute=[];
@@ -125,6 +137,7 @@
   runoffPath.slice(1,22).forEach(([x,z])=>slideRoute.push({x,z,y:heightAt(x,z)+.1}));
 
   let sliding=false,slideIndex=0,slideProgress=0,slideEscapeCooldown=0;
+  window.isSlidingWaterfall=()=>sliding;
 
   function nearestSlideIndex(){
     let best=-1,bestD=Infinity;
@@ -141,8 +154,12 @@
     john.rotation.z=0;
     leftArm.rotation.set(0,0,0);
     rightArm.rotation.set(0,0,0);
-    leftArm.position.set(-.72,2.25,0);
-    rightArm.position.set(.72,2.25,0);
+    leftElbow.rotation.x=0;
+    rightElbow.rotation.x=0;
+    if(typeof leg1Knee!=='undefined'&&typeof leg2Knee!=='undefined'){
+      leg1Knee.rotation.x=0;
+      leg2Knee.rotation.x=0;
+    }
   }
 
   function escapeWaterSlide(){
@@ -211,8 +228,14 @@
     rightArm.rotation.z=1.25-Math.sin(t*6+.8)*.12;
     leftArm.rotation.x=.25;
     rightArm.rotation.x=.25;
+    leftElbow.rotation.x=.6;
+    rightElbow.rotation.x=.6;
     leg1.rotation.x=.75+Math.sin(t*8)*.16;
     leg2.rotation.x=.48+Math.sin(t*8+1.2)*.16;
+    if(typeof leg1Knee!=='undefined'&&typeof leg2Knee!=='undefined'){
+      leg1Knee.rotation.x=.9+Math.sin(t*8)*.1;
+      leg2Knee.rotation.x=.75+Math.sin(t*8+1.2)*.1;
+    }
 
     if(slideIndex>=slideRoute.length-2&&slideProgress>=.96){
       sliding=false;

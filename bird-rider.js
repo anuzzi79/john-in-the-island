@@ -21,19 +21,28 @@
   function setHangingPose(active){
     if(typeof leftArm!=='undefined'&&typeof rightArm!=='undefined'){
       if(active){
-        leftArm.rotation.set(-.18,0,-2.82);
-        rightArm.rotation.set(-.18,0,2.82);
-        leftArm.position.set(-.43,2.94,.03);
-        rightArm.position.set(.43,2.94,.03);
+        leftArm.rotation.set(-3.05,0,-.25);
+        rightArm.rotation.set(-3.05,0,.25);
+        if(typeof leftElbow!=='undefined'&&typeof rightElbow!=='undefined'){
+          leftElbow.rotation.x=.4;
+          rightElbow.rotation.x=.4;
+        }
       }else if(typeof resetSlidePose==='function'){
         resetSlidePose();
       }else{
         leftArm.rotation.set(0,0,0);rightArm.rotation.set(0,0,0);
-        leftArm.position.set(-.72,2.25,0);rightArm.position.set(.72,2.25,0);
+        if(typeof leftElbow!=='undefined'&&typeof rightElbow!=='undefined'){
+          leftElbow.rotation.x=0;
+          rightElbow.rotation.x=0;
+        }
       }
     }
     if(active){
       leg1.rotation.x=.42;leg2.rotation.x=-.28;
+      if(typeof leg1Knee!=='undefined'&&typeof leg2Knee!=='undefined'){
+        leg1Knee.rotation.x=.55;
+        leg2Knee.rotation.x=.4;
+      }
       john.rotation.x=0;
       john.rotation.z=0;
     }
@@ -172,6 +181,10 @@
     setHangingPose(true);
     leg1.rotation.x=.30+Math.sin(t*4)*.13;
     leg2.rotation.x=-.20+Math.sin(t*4+1.1)*.13;
+    if(typeof leg1Knee!=='undefined'&&typeof leg2Knee!=='undefined'){
+      leg1Knee.rotation.x=.5+Math.sin(t*4)*.1;
+      leg2Knee.rotation.x=.35+Math.sin(t*4+1.1)*.1;
+    }
     return true;
   }
 
