@@ -52,12 +52,12 @@
     }
     if(johnSwimming){
       const stroke=t*6.8,strokeL=Math.sin(stroke),strokeR=Math.sin(stroke+Math.PI),kick=Math.sin(t*10.5);
-      john.rotation.x=THREE.MathUtils.lerp(john.rotation.x,-1.27,.14);
-      john.rotation.z=THREE.MathUtils.lerp(john.rotation.z,Math.sin(stroke*.5)*.09,.12);
+      john.rotation.x=THREE.MathUtils.lerp(john.rotation.x,-Math.PI/2,.18);
+      john.rotation.z=THREE.MathUtils.lerp(john.rotation.z,0,.16);
       body.position.y=2.18+Math.sin(t*4.4)*.035;
-      body.rotation.x=THREE.MathUtils.lerp(body.rotation.x,.08,.12);
+      body.rotation.x=THREE.MathUtils.lerp(body.rotation.x,0,.14);
       body.rotation.y=THREE.MathUtils.lerp(body.rotation.y,0,.12);
-      body.rotation.z=THREE.MathUtils.lerp(body.rotation.z,Math.sin(stroke*.5)*.07,.12);
+      body.rotation.z=THREE.MathUtils.lerp(body.rotation.z,Math.sin(stroke*.5)*.05,.12);
       head.position.y=THREE.MathUtils.lerp(head.position.y,3.25,.1);
       head.rotation.x=THREE.MathUtils.lerp(head.rotation.x,-.28,.12);
       head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,Math.sin(stroke*.5)*.12,.12);
