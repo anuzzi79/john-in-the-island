@@ -12,7 +12,7 @@
   }
 
   function makeFish(x,z,index){
-    const y=-.7+.12*Math.sin(index);
+    const y=-1.55+.12*Math.sin(index);
     const g=new THREE.Group();
     const mat=new THREE.MeshStandardMaterial({color:index%2?0xffc44f:0x4fd6ff,roughness:.38,emissive:index%2?0x4a2600:0x00384a,emissiveIntensity:.28});
     const body=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),mat);
@@ -40,7 +40,7 @@
       const u=f.userData;
       f.position.x=u.homeX+Math.sin(t*1.4+u.phase)*1.15;
       f.position.z=u.homeZ+Math.cos(t*1.1+u.phase)*.75;
-      f.position.y=-.82+Math.sin(t*2.2+u.phase)*.12;
+      f.position.y=-1.55+Math.sin(t*2.2+u.phase)*.12;
       f.rotation.y=Math.atan2(Math.cos(t*1.4+u.phase),Math.sin(t*1.1+u.phase));
       if(johnSwimming&&Math.hypot(f.position.x-john.position.x,f.position.z-john.position.z)<1.35){
         u.caught=true;
