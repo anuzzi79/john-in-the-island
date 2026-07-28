@@ -1,6 +1,7 @@
 (()=>{
   const fishStatus=document.getElementById('status');
   let fishCount=0;
+  let lastJohnX=0,lastJohnZ=0,swimYaw=0;
   const fish=[];
   const hud=document.createElement('div');
   hud.id='fishHud';
@@ -35,6 +36,9 @@
   updateHud();
 
   function updateFishGameplay(dt,t,johnSwimming){
+    const dx=john.position.x-lastJohnX,dz=john.position.z-lastJohnZ;
+    if(johnSwimming&&Math.hypot(dx,dz)>.015)swimYaw=Math.atan2(-dx,-dz);
+    lastJohnX=john.position.x;lastJohnZ=john.position.z;
     for(const f of fish){
       if(f.userData.caught)continue;
       const u=f.userData;
@@ -52,15 +56,15 @@
     }
     if(johnSwimming){
       const stroke=t*6.8,strokeL=Math.sin(stroke),strokeR=Math.sin(stroke+Math.PI),kick=Math.sin(t*10.5);
-      john.rotation.x=-Math.PI/2;
-      john.rotation.z=0;
+      john.rotation.order='XYZ';
+      john.rotation.set(-Math.PI/2,swimYaw,0);
       body.position.y=2.18+Math.sin(t*4.4)*.035;
       body.rotation.x=0;
-      body.rotation.y=THREE.MathUtils.lerp(body.rotation.y,0,.12);
+      body.rotation.y=0;
       body.rotation.z=THREE.MathUtils.lerp(body.rotation.z,Math.sin(stroke*.5)*.05,.12);
       head.position.y=THREE.MathUtils.lerp(head.position.y,3.25,.1);
       head.rotation.x=THREE.MathUtils.lerp(head.rotation.x,-.28,.12);
-      head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,Math.sin(stroke*.5)*.12,.12);
+      head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,Math.sin(stroke*.5)*.06,.12);
       leg1.rotation.x=.16+kick*.25;
       leg2.rotation.x=.16-kick*.25;
       leg1.rotation.z=-.08;
