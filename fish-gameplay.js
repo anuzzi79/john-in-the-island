@@ -1,10 +1,66 @@
 (()=>{
   const fishStatus=document.getElementById('status');
   let fishCount=0;
-  let lastJohnX=0,lastJohnZ=0,swimYaw=0;
+  let lastJohnX=0,lastJohnZ=0,swimYaw=0,swimPitch=0,swimDepthY=-.35,wasSwimming=false,keyDive=false,keyRise=false;
   const fish=[];
-  let waterFxReady=false,waterSurfacePatch=null,waterVeil=null,waterRings=[],johnMaterialState=[],waterCanvasFilter=null;
+  let waterFxReady=false,waterSurfacePatch=null,waterVeil=null,waterRings=[],seabedPatch=null,johnMaterialState=[],waterCanvasFilter=null;
   const waterTint=new THREE.Color(0x9eeaff);
+  addEventListener('keydown',e=>{
+    if(e.code==='ShiftLeft'||e.code==='ShiftRight'||e.code==='ControlLeft'||e.code==='ControlRight')keyDive=true;
+    if(e.code==='Space'||e.code==='KeyE')keyRise=true;
+  });
+  addEventListener('keyup',e=>{
+    if(e.code==='ShiftLeft'||e.code==='ShiftRight'||e.code==='ControlLeft'||e.code==='ControlRight')keyDive=false;
+    if(e.code==='Space'||e.code==='KeyE')keyRise=false;
+  });
+
+  function seaFloorAt(x,z){
+    const r=Math.hypot(x,z);
+    const open=Math.max(0,r-58);
+    const islandSlope=-1.65-open*.2-Math.max(0,r-86)*.18;
+    const nor=Math.hypot(x-104,z+18),car=Math.hypot(x+115,z-40);
+    const localShelf=Math.max(-5.5,-1.55-Math.max(0,Math.min(nor-38,car-54))*.18);
+    const rough=Math.sin(x*.17+z*.041)*.55+Math.cos(z*.13)*.42+Math.sin((x-z)*.071)*.35;
+    return Math.max(-52,Math.min(islandSlope,localShelf)+rough);
+  }
+
+  function updateSeabedPatch(t,active){
+    if(!seabedPatch)return;
+    seabedPatch.visible=active;
+    if(!active)return;
+    seabedPatch.position.set(john.position.x,0,john.position.z);
+    const sp=seabedPatch.geometry.attributes.position;
+    for(let i=0;i<sp.count;i++){
+      const wx=john.position.x+sp.getX(i),wz=john.position.z+sp.getZ(i);
+      sp.setY(i,seaFloorAt(wx,wz)+Math.sin(wx*.23+t*.55)*.12+Math.cos(wz*.19-t*.4)*.1);
+    }
+    sp.needsUpdate=true;
+    seabedPatch.geometry.computeVertexNormals();
+  }
+
+  function updateUnderwaterMovement(dt,t,johnSwimming,inputX=0,inputY=0,yawValue=0,pitchValue=.35){
+    if(!johnSwimming){
+      wasSwimming=false;
+      swimDepthY=-.35;
+      swimPitch=THREE.MathUtils.lerp(swimPitch,0,.16);
+      return;
+    }
+    const floorY=seaFloorAt(john.position.x,john.position.z)+.72;
+    if(!wasSwimming){
+      swimDepthY=Math.max(floorY,Math.min(-.35,john.position.y));
+      wasSwimming=true;
+    }
+    const horizontalInput=Math.min(1,Math.hypot(inputX,inputY));
+    let vertical=0;
+    if(horizontalInput>.05)vertical+=Math.max(-1,Math.min(1,-Math.sin(pitchValue-.35)))*4.4;
+    if(keyDive)vertical-=4.6;
+    if(keyRise)vertical+=4.8;
+    swimDepthY+=vertical*dt;
+    swimDepthY=Math.max(floorY,Math.min(-.32,swimDepthY));
+    if(swimDepthY<=floorY+.05&&fishStatus)fishStatus.textContent='John tocca il fondo del mare';
+    john.position.y=swimDepthY+Math.sin(t*3.2)*.035;
+    swimPitch=THREE.MathUtils.lerp(swimPitch,Math.max(-.55,Math.min(.55,vertical*.11)),.14);
+  }
 
   function initWaterEffects(){
     if(waterFxReady)return;
@@ -29,6 +85,13 @@
     waterVeil.renderOrder=40;
     waterVeil.visible=false;
     scene.add(waterVeil);
+    const seabedGeo=new THREE.PlaneGeometry(82,82,44,44);
+    seabedGeo.rotateX(-Math.PI/2);
+    const seabedMat=new THREE.MeshStandardMaterial({color:0x2f6f63,roughness:1,metalness:0,flatShading:true,vertexColors:false});
+    seabedPatch=new THREE.Mesh(seabedGeo,seabedMat);
+    seabedPatch.receiveShadow=true;
+    seabedPatch.visible=false;
+    scene.add(seabedPatch);
     waterCanvasFilter=renderer.domElement.style.filter||'';
     john.traverse(o=>{
       if(!o.isMesh||!o.material)return;
@@ -69,6 +132,7 @@
     const active=!!johnSwimming;
     waterSurfacePatch.visible=active;
     waterVeil.visible=active;
+    updateSeabedPatch(t,active);
     waterRings.forEach(r=>r.visible=active);
     setJohnUnderwaterLook(active,t);
     renderer.domElement.style.filter=active?'saturate(1.13) contrast(.96) blur(.45px)':waterCanvasFilter;
@@ -127,7 +191,8 @@
   spots.forEach((p,i)=>makeFish(p[0],p[1],i));
   updateHud();
 
-  function updateFishGameplay(dt,t,johnSwimming){
+  function updateFishGameplay(dt,t,johnSwimming,inputX=0,inputY=0,yawValue=0,pitchValue=.35){
+    updateUnderwaterMovement(dt,t,johnSwimming,inputX,inputY,yawValue,pitchValue);
     updateWaterEffects(dt,t,johnSwimming);
     const dx=john.position.x-lastJohnX,dz=john.position.z-lastJohnZ;
     if(johnSwimming&&Math.hypot(dx,dz)>.015)swimYaw=Math.atan2(-dx,-dz);
@@ -139,7 +204,7 @@
       f.position.z=u.homeZ+Math.cos(t*1.1+u.phase)*.75;
       f.position.y=-1.55+Math.sin(t*2.2+u.phase)*.12;
       f.rotation.y=Math.atan2(Math.cos(t*1.4+u.phase),Math.sin(t*1.1+u.phase));
-      if(johnSwimming&&Math.hypot(f.position.x-john.position.x,f.position.z-john.position.z)<1.35){
+      if(johnSwimming&&Math.hypot(f.position.x-john.position.x,f.position.z-john.position.z,f.position.y-john.position.y)<1.55){
         u.caught=true;
         f.visible=false;
         fishCount=Math.min(3,fishCount+1);
@@ -150,7 +215,7 @@
     if(johnSwimming){
       const stroke=t*6.8,strokeL=Math.sin(stroke),strokeR=Math.sin(stroke+Math.PI),kick=Math.sin(t*10.5);
       john.rotation.order='XYZ';
-      john.rotation.set(-Math.PI/2,0,swimYaw);
+      john.rotation.set(-Math.PI/2+swimPitch,0,swimYaw);
       body.position.y=2.18+Math.sin(t*4.4)*.035;
       body.rotation.x=0;
       body.rotation.y=0;
