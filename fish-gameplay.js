@@ -57,7 +57,7 @@
     if(johnSwimming){
       const stroke=t*6.8,strokeL=Math.sin(stroke),strokeR=Math.sin(stroke+Math.PI),kick=Math.sin(t*10.5);
       john.rotation.order='XYZ';
-      john.rotation.set(-Math.PI/2,swimYaw,0);
+      john.rotation.set(-Math.PI/2,0,swimYaw);
       body.position.y=2.18+Math.sin(t*4.4)*.035;
       body.rotation.x=0;
       body.rotation.y=0;
